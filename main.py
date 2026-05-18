@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse #Redirects responses
 from sqlalchemy.orm import Session
 import models
 import schemas
@@ -10,11 +10,15 @@ from utils import generate_short_code
 
 #Create database Tables
 
+#Create database Tables - create all tables defined in models.py
 models.Base.metadata.create_all(bind = engine)
 app = FastAPI()
 
+
+#database session lifecycle manager
 def get_db():
-    db = SessionLocal()
+
+    db = SessionLocal() #Actual database session
     try:
         yield db
     finally:
@@ -27,8 +31,13 @@ def home():
 
 #Shortend URl Route
 @app.post("/shorten")
-def shorten_url(request:schemas.URLRequest, db:Session = Depends(get_db)):
-    short_code = generate_short_code()
+def shorten_url(request:schemas.URLRequest, db:Session = Depends(get_db)): #"FastAPI, run get_db() automatically and give me the result."
+    
+    while True:
+        short_code = generate_short_code()
+        existing_url = db.query(models.url).filer(models.url.short_code == short_code).first()
+        if not existing_url:
+            break
 
     new_url = models.url(
         short_code = short_code,
